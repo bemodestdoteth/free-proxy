@@ -27,13 +27,13 @@ class FreeProxy:
         self.google = google
         self.schema = 'https' if https else 'http'
 
-    def get_proxy_list(self, repeat):
+    def get_proxy_list(self):
         try:
-            page = requests.get(self.__website(repeat))
+            page = requests.get(self.__website())
             doc = lh.fromstring(page.content)
         except requests.exceptions.RequestException as e:
             raise FreeProxyException(
-                f'Request to {self.__website(repeat)} failed') from e
+                f'Request to {self.__website()} failed') from e
         try:
             tr_elements = doc.xpath('//*[@id="list"]//tr')
             return [f'{tr_elements[i][0].text_content()}:{tr_elements[i][1].text_content()}'
@@ -41,13 +41,9 @@ class FreeProxy:
         except Exception as e:
             raise FreeProxyException('Failed to get list of proxies') from e
 
-    def __website(self, repeat):
-        if repeat:
-            return "https://free-proxy-list.net"
-        elif self.country_id == ['US']:
-            return 'https://www.us-proxy.org'
-        elif self.country_id == ['GB']:
-            return 'https://free-proxy-list.net/uk-proxy.html'
+    def __website(self):
+        if self.random:
+            return random.choice(['https://www.sslproxies.org', 'https://free-proxy-list.net/uk-proxy.html', 'https://www.us-proxy.org', "https://free-proxy-list.net"])
         else:
             return 'https://www.sslproxies.org'
 
@@ -63,9 +59,9 @@ class FreeProxy:
             row_elements[5].text_content())
         return country_criteria and elite_criteria and anonym_criteria and google_criteria
 
-    def get(self, repeat=False):
+    def get(self):
         '''Returns a working proxy that matches the specified parameters.'''
-        proxy_list = self.get_proxy_list(repeat)
+        proxy_list = self.get_proxy_list()
         if self.random:
             random.shuffle(proxy_list)
         working_proxy = None
@@ -80,7 +76,7 @@ class FreeProxy:
         if not working_proxy:
             if self.country_id is not None:
                 self.country_id = None
-                return self.get(repeat=True)
+                return self.get()
             raise FreeProxyException(
                 'There are no working proxies at this time.')
 
